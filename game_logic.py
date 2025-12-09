@@ -1,5 +1,3 @@
-# game_logic.py
-
 import time
 import random
 import config
@@ -7,10 +5,12 @@ import config
 class Game:
 
     def __init__(self, display, inputs, lights):
+        # Core game managers
         self.display = display
         self.inputs = inputs
         self.lights = lights
 
+        # Game state variables
         self.state = config.STATE_MENU
         self.diff = config.DEFAULT_DIFFICULTY_INDEX
 
@@ -22,7 +22,7 @@ class Game:
         self.display.show_menu(config.DIFFICULTIES, self.diff)
         self.lights.set_idle()
 
-    # ================= MENU =================
+    # ----------- MAIN UPDATE LOOP -----------
     def update(self, now):
         if self.state == config.STATE_MENU:
             self.update_menu()
@@ -32,6 +32,7 @@ class Game:
             if self.inputs.get_press():
                 self.goto_menu()
 
+    # ----------- MENU HANDLING -----------
     def update_menu(self):
         if self.inputs.get_turn():
             self.diff = (self.diff + 1) % len(config.DIFFICULTIES)
@@ -40,13 +41,14 @@ class Game:
         if self.inputs.get_press():
             self.start_game()
 
-    # ================= GAME FLOW =================
+    # ----------- GAME FLOW -----------
     def start_game(self):
         self.level = 1
         self.next_level()
         self.lights.game_start()
 
     def next_level(self):
+        # End condition
         if self.level > config.LEVEL_COUNT:
             self.display.show_win()
             self.state = config.STATE_WIN
@@ -57,6 +59,7 @@ class Game:
         self.sequence = self.generate_sequence()
         self.step = 0
 
+        # Adjust timing based on difficulty and level progression
         diff = config.DIFFICULTIES[self.diff]
         start = diff["time_start"]
         end = diff["time_end"]
@@ -66,8 +69,9 @@ class Game:
         self.deadline = time.monotonic() + self.time_per_step
         self.show_step()
 
-    # ================= SEQUENCE GEN =================
+    # ----------- SEQUENCE GENERATION -----------
     def generate_sequence(self):
+        # Create a random sequence of actions without repeating tilt types
         length = config.DIFFICULTIES[self.diff]["base_sequence_length"]
         seq = []
         last_tilt = None
@@ -75,10 +79,7 @@ class Game:
         for _ in range(length):
             a = random.choice(config.ACTIONS)
 
-            while (
-                a in config.TILT_ACTIONS
-                and a == last_tilt
-            ):
+            while a in config.TILT_ACTIONS and a == last_tilt:
                 a = random.choice(config.ACTIONS)
 
             seq.append(a)
@@ -92,7 +93,7 @@ class Game:
         text = config.ACTION_LABELS[action]
         self.display.show_level(self.level, self.step, len(self.sequence), action, text)
 
-    # ================= PLAYING =================
+    # ----------- GAMEPLAY UPDATE -----------
     def update_play(self, now):
         if now > self.deadline:
             self.fail()
@@ -100,31 +101,22 @@ class Game:
 
         a = self.sequence[self.step]
 
-        # TURN
+        # Handle rotate
         if self.inputs.get_turn():
-            if a == config.ACTION_ROTATE:
-                self.success()
-            else:
-                self.fail()
+            self.success() if a == config.ACTION_ROTATE else self.fail()
             return
 
-        # PRESS
+        # Handle press
         if self.inputs.get_press():
-            if a == config.ACTION_PRESS:
-                self.success()
-            else:
-                self.fail()
+            self.success() if a == config.ACTION_PRESS else self.fail()
             return
 
-        # TILT
+        # Handle tilt
         tilt = self.inputs.get_tilt()
         if tilt:
-            if tilt == a:
-                self.success()
-            else:
-                self.fail()
+            self.success() if tilt == a else self.fail()
 
-    # ================= SUCCESS / FAIL =================
+    # ----------- SUCCESS / FAIL HANDLING -----------
     def success(self):
         self.lights.success()
         self.step += 1
@@ -144,4 +136,3 @@ class Game:
         self.state = config.STATE_MENU
         self.display.show_menu(config.DIFFICULTIES, self.diff)
         self.lights.set_idle()
-

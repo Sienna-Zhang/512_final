@@ -1,4 +1,3 @@
-# config.py
 import board
 
 # ============================
@@ -8,14 +7,14 @@ I2C_SCL = board.SCL
 I2C_SDA = board.SDA
 
 # ============================
-# Encoder pins
+# Encoder Pins
 # ============================
 ENCODER_CLK_PIN = board.D3
 ENCODER_DT_PIN  = board.D2
 ENCODER_SW_PIN  = board.D8
 
 # ============================
-# NeoPixel
+# NeoPixel Settings
 # ============================
 NEOPIXEL_PIN = board.D7
 NEOPIXEL_NUM_PIXELS = 1
@@ -40,6 +39,7 @@ ACTIONS = [
     ACTION_TILT_BACKWARD,
 ]
 
+# Display labels for actions
 ACTION_LABELS = {
     ACTION_ROTATE: "TURN",
     ACTION_PRESS:  "PRESS",
@@ -49,7 +49,7 @@ ACTION_LABELS = {
     ACTION_TILT_BACKWARD: "BACK",
 }
 
-# 用来识别 tilt 类动作
+# Used to identify tilt-type actions
 TILT_ACTIONS = {
     ACTION_TILT_LEFT,
     ACTION_TILT_RIGHT,
@@ -58,7 +58,7 @@ TILT_ACTIONS = {
 }
 
 # ============================
-# Difficulty & Levels
+# Difficulty & Level Settings
 # ============================
 DIFFICULTIES = [
     {"name": "Easy",   "time_start": 5.0, "time_end": 4.0, "base_sequence_length": 3},
@@ -71,7 +71,7 @@ LEVEL_COUNT = 10
 SEQUENCE_LENGTH_INCREMENT = 1
 
 # ============================
-# System settings
+# System Settings
 # ============================
 BUTTON_DEBOUNCE_DELAY = 0.2
 ACCEL_CALIBRATION_SAMPLES = 50
@@ -87,5 +87,3 @@ STATE_MENU = "MENU"
 STATE_PLAYING = "PLAYING"
 STATE_GAME_OVER = "GAME_OVER"
 STATE_WIN = "WIN"
-
-

@@ -1,5 +1,3 @@
-# inputs.py
-
 import time
 import digitalio
 import adafruit_adxl34x
@@ -8,7 +6,7 @@ import config
 class InputManager:
 
     def __init__(self, i2c):
-        # ---- Encoder ----
+        # Rotary encoder signals
         self.clk = digitalio.DigitalInOut(config.ENCODER_CLK_PIN)
         self.clk.direction = digitalio.Direction.INPUT
         self.clk.pull = digitalio.Pull.UP
@@ -20,16 +18,16 @@ class InputManager:
         self.last_clk = self.clk.value
         self.last_turn_time = 0
 
-        # ---- Button ----
+        # Encoder button
         self.btn = digitalio.DigitalInOut(config.ENCODER_SW_PIN)
         self.btn.direction = digitalio.Direction.INPUT
         self.btn.pull = digitalio.Pull.UP
         self.last_btn_time = 0
 
-        # ---- Accelerometer ----
+        # Accelerometer
         self.accel = adafruit_adxl34x.ADXL345(i2c)
 
-    # ---- ROTATE (no direction) ----
+    # Detect rotation (no direction needed)
     def get_turn(self):
         clk = self.clk.value
         if clk != self.last_clk:
@@ -39,7 +37,7 @@ class InputManager:
                 return config.ACTION_ROTATE
         return None
 
-    # ---- PRESS ----
+    # Detect button press
     def get_press(self):
         if not self.btn.value:
             if time.monotonic() - self.last_btn_time > config.BUTTON_DEBOUNCE_DELAY:
@@ -47,7 +45,7 @@ class InputManager:
                 return config.ACTION_PRESS
         return None
 
-    # ---- TILT detection ----
+    # Detect tilt direction using accelerometer
     def get_tilt(self):
         x, y, z = self.accel.acceleration
 
@@ -60,4 +58,3 @@ class InputManager:
         if y < -config.ACCEL_THRESHOLD:
             return config.ACTION_TILT_BACKWARD
         return None
-

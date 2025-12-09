@@ -1,5 +1,3 @@
-# code.py
-
 import time
 from i2c_bus import get_i2c
 from display_manager import DisplayManager
@@ -10,11 +8,9 @@ import config
 
 i2c = get_i2c()
 
-# 必须先初始化 inputs（ADXL345），再 OLED
+# Initialize inputs (ADXL345) before the OLED
 inputs = InputManager(i2c)
-
 display = DisplayManager(i2c)
-
 lights = LightsManager()
 
 game = Game(display, inputs, lights)
@@ -23,4 +19,3 @@ while True:
     now = time.monotonic()
     game.update(now)
     time.sleep(config.MAIN_LOOP_DELAY)
-
