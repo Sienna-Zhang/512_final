@@ -353,20 +353,4 @@ simon-game/
 └── README.md           # This file
 ```
 
----
-
-## 📄 License
-
-This project is open source. Feel free to modify, improve, and share!
-
----
-
-## 🙏 Acknowledgments
-
-- Inspired by classic games: *Simon*, *Bop It*, and other 90s handheld reaction toys
-- Built with [CircuitPython](https://circuitpython.org/)
-- Hardware by [Seeed Studio](https://www.seeedstudio.com/)
-
----
-
 **Enjoy the game! 🎉**
