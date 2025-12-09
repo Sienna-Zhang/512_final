@@ -1,9 +1,9 @@
 # 🎮 Simon-Style Memory Game  
-*A Reaction-Based Handheld Game Powered by Seeeduino XIAO + CircuitPython*
+*A Reaction-Based Handheld Game Powered by XIAO ESP32 + CircuitPython*
 
 ## 📌 Overview  
 This project implements a **Simon-style memory game**, inspired by classic 90s handheld reaction toys like *Bop It* and *Simon*.  
-The device is built using a **Seeed Studio Xiao SAMD21** with CircuitPython and integrates tilt detection, rotation, button input, and visual feedback through an OLED display and RGB LED.
+The device is built using a **XIAO ESP32** with CircuitPython and integrates tilt detection, rotation, button input, and visual feedback through an OLED display and RGB LED.
 
 Players must complete increasingly complex action sequences—tilting, pressing, or turning—within a time limit that shrinks as levels progress.  
 The game features three difficulty modes, 10 progressive levels, win/lose screens, and rainbow LED celebration effects.
