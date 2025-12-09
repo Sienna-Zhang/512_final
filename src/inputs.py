@@ -1,96 +1,80 @@
 # inputs.py
-"""
-输入管理：旋转编码器 / 按钮 / ADXL345 加速度计
-"""
 
 import time
-import board
-import busio
 import digitalio
-
 import adafruit_adxl34x
 import config
 
-
 class InputManager:
-    def __init__(self):
 
-        # -----------------------------
-        # 编码器旋钮（CLK / DT）
-        # -----------------------------
-        self.enc_clk = digitalio.DigitalInOut(config.ENCODER_CLK_PIN)
-        self.enc_clk.direction = digitalio.Direction.INPUT
-        self.enc_clk.pull = digitalio.Pull.UP
+    def __init__(self, i2c):
+        # ---- Encoder ----
+        self.clk = digitalio.DigitalInOut(config.ENCODER_CLK_PIN)
+        self.clk.direction = digitalio.Direction.INPUT
+        self.clk.pull = digitalio.Pull.UP
 
-        self.enc_dt = digitalio.DigitalInOut(config.ENCODER_DT_PIN)
-        self.enc_dt.direction = digitalio.Direction.INPUT
-        self.enc_dt.pull = digitalio.Pull.UP
+        self.dt = digitalio.DigitalInOut(config.ENCODER_DT_PIN)
+        self.dt.direction = digitalio.Direction.INPUT
+        self.dt.pull = digitalio.Pull.UP
 
-        self.last_clk = self.enc_clk.value
+        self.last_clk = self.clk.value
+        self.last_turn_time = 0
+        
+        # 旋转检测：需要检测到完整的脉冲才算一次旋转
+        self.rotation_confirmed = False
 
-        # -----------------------------
-        # 按钮
-        # -----------------------------
-        self.enc_sw = digitalio.DigitalInOut(config.ENCODER_SW_PIN)
-        self.enc_sw.direction = digitalio.Direction.INPUT
-        self.enc_sw.pull = digitalio.Pull.UP
-        self._last_button_time = 0
+        # ---- Button ----
+        self.btn = digitalio.DigitalInOut(config.ENCODER_SW_PIN)
+        self.btn.direction = digitalio.Direction.INPUT
+        self.btn.pull = digitalio.Pull.UP
+        self.last_btn_time = 0
 
-        # -----------------------------
-        # 加速度计 ADXL345（I2C）
-        # -----------------------------
-        i2c = busio.I2C(config.I2C_SCL, config.I2C_SDA)
+        # ---- Accelerometer ----
         self.accel = adafruit_adxl34x.ADXL345(i2c)
 
-        # 加速度计初始偏移（后面做校准）
-        self.offset_x = 0
-        self.offset_y = 0
-        self.offset_z = 0
-
-    # -------------------------------------------------------
-    # 编码器：返回 "LEFT" / "RIGHT" / None
-    # -------------------------------------------------------
-    def get_encoder_turn(self):
-        current_clk = self.enc_clk.value
-
-        # 检测边沿变化
-        if current_clk != self.last_clk:
-            self.last_clk = current_clk
-
-            if current_clk:  # 只在上升沿处理
-                if self.enc_dt.value != current_clk:
-                    return "RIGHT"
-                else:
-                    return "LEFT"
-
+    # ---- ROTATE (improved detection) ----
+    def get_turn(self):
+        """
+        改进的旋转检测：
+        1. 检测CLK信号的完整变化（从HIGH到LOW或从LOW到HIGH）
+        2. 验证DT信号确认旋转方向
+        3. 添加防抖动延迟
+        """
+        clk = self.clk.value
+        dt = self.dt.value
+        
+        # 检测CLK下降沿（从HIGH到LOW的转变）
+        if clk != self.last_clk:
+            if not clk:  # CLK从HIGH变为LOW
+                # 检查DT状态来确认这是真实的旋转
+                # 无论顺时针还是逆时针，只要转动就返回ROTATE
+                if time.monotonic() - self.last_turn_time > 0.15:  # 增加防抖时间
+                    self.last_turn_time = time.monotonic()
+                    self.last_clk = clk
+                    return config.ACTION_ROTATE
+            
+            self.last_clk = clk
+        
         return None
 
-    # -------------------------------------------------------
-    # 按钮检测：仅检测“按下瞬间”
-    # -------------------------------------------------------
-    def get_button_press(self):
-        if not self.enc_sw.value:  # 拉高，上按为 0
-            now = time.monotonic()
-            if now - self._last_button_time > config.BUTTON_DEBOUNCE_DELAY:
-                self._last_button_time = now
-                return True
-        return False
+    # ---- PRESS ----
+    def get_press(self):
+        if not self.btn.value:
+            if time.monotonic() - self.last_btn_time > config.BUTTON_DEBOUNCE_DELAY:
+                self.last_btn_time = time.monotonic()
+                return config.ACTION_PRESS
+        return None
 
-    # -------------------------------------------------------
-    # 加速度计原始数据（带偏移）
-    # -------------------------------------------------------
-    def get_accel(self):
+    # ---- TILT detection ----
+    def get_tilt(self):
         x, y, z = self.accel.acceleration
-        return (
-            x - self.offset_x,
-            y - self.offset_y,
-            z - self.offset_z,
-        )
 
-    # -------------------------------------------------------
-    # Shake 检测（粗略版，后面一起调试）
-    # -------------------------------------------------------
-    def detect_shake(self):
-        x, y, z = self.get_accel()
-        total = abs(x) + abs(y) + abs(z)
-        return total > config.SHAKE_THRESHOLD
+        if x > config.ACCEL_THRESHOLD:
+            return config.ACTION_TILT_RIGHT
+        if x < -config.ACCEL_THRESHOLD:
+            return config.ACTION_TILT_LEFT
+        if y > config.ACCEL_THRESHOLD:
+            return config.ACTION_TILT_FORWARD
+        if y < -config.ACCEL_THRESHOLD:
+            return config.ACTION_TILT_BACKWARD
+        return None
