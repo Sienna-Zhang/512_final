@@ -132,7 +132,6 @@ The **12mm panel-mount button** is mounted on the side for ergonomic PRESS actio
 - **Modular architecture** - Each component has a dedicated manager class
 - **State machine pattern** - Clean state transitions (MENU → PLAYING → WIN/GAME_OVER)
 - **Object composition** - Game class coordinates all hardware managers
-- **Non-blocking animations** - LED effects don't freeze gameplay
 
 ### File Structure
 
@@ -229,18 +228,8 @@ if time.monotonic() - self.last_press_time > 0.2:  # 200ms debounce
 - More reliable than level-based detection
 - 0.15s debounce eliminates mechanical noise
 
-### 4. Non-Blocking Victory Animation
-```python
-def update(self, now):
-    if now - self.win_last_change >= 0.15:
-        # Cycle to next color
-        self.win_color_index = (self.win_color_index + 1) % 7
-```
-- Called in main loop, not blocking
-- Player can still press button to return to menu
-- Cycles through 7 colors: Red → Orange → Yellow → Green → Cyan → Blue → Purple
 
-### 5. Sequence Generation Logic
+### 4. Sequence Generation Logic
 ```python
 while action in TILT_ACTIONS and action == last_tilt:
     action = random.choice(ACTIONS)  # Re-roll
